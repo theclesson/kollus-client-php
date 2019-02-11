@@ -36,4 +36,6 @@ class Kollus
         $this->config['channel_key'] = $channel_key;
     }
 
+    public function getPlayToken() {}
+
 }
