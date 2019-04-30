@@ -2,12 +2,11 @@
 
 namespace Clesson\Kollus;
 
-use App\Foundations\Logging;
 use Clesson\Kollus\Foundations\Attributable;
 
 class KollusMedia
 {
-    use Attributable, Logging;
+    use Attributable;
 
     const TYPE_INTRO   = 'INTRO';
     const TYPE_FREE    = 'FREE';

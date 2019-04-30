@@ -2,19 +2,20 @@
 
 namespace Clesson\Kollus;
 
-use App\Foundations\Logging;
 use Clesson\Kollus\Foundations\Configurable;
 use Firebase\JWT\JWT;
 
 class KollusClient
 {
-    use Configurable, Logging;
+    use Configurable;
+
+    const PLAYER_PC = 'V3h';
 
     const JWT_PAYLOAD = [
         'cuid'                           => true,
         'awtc'                           => null,
         'video_watermarking_code_policy' => null,
-        'expt'                           => 86400,
+        'expt'                           => null,
         'pc_skin'                        => false,
         'mc'                             => [],
     ];
@@ -35,7 +36,7 @@ class KollusClient
         'pf'                => null,
         'autoplay'          => true,
         'mute'              => null,
-        'pc_player_version' => 'v3e',
+        'pc_player_version' => null,
         'player_version'    => null,
         'uservalue0'        => null, // class_pid
         'uservalue1'        => null, // video_pid
@@ -49,24 +50,39 @@ class KollusClient
         'uservalue9'        => null,
     ];
 
+    protected $logger;
     protected $config;
 
-    public function __construct( $config = [] )
+    public function __construct( $config = [], $logger = null )
     {
+        $this->logger = $logger;
         $this->setConfig( $config );
+        $this->debug( $this->config );
     }
 
     public function getPlayUrl( $videos = [], $userId = null, $options = [] )
     {
-        $video = @$videos[0]['video_type'] == KollusMedia::TYPE_INTRO && isset( $videos[1] ) ? @$videos[1] : @$videos[0];
+        $video = @$videos[1] ?: $videos[0];
         $mode  = @$options['kind'] ?: 's';
 
-        $params                                   = array_refine( static::VG_QUERY, array_merge( $this->config['player_params'], $options ), false );
-        $params['title']                          = @$options['title'] ?: @$video['video_title'];
-        @$video['play_position'] and $params['t'] = @$video['play_position'];
-        $this->debug( $params );
+        $params = array_refine( static::VG_QUERY, array_merge( $this->config['player_params'], $options ), false );
 
-        return $this->getVideoGateWay() . $mode
+        if ( isset( $video['video_type'] ) && $video['video_type'] == KollusMedia::TYPE_REGULAR ) {
+            $params['pc_player_version'] = static::PLAYER_PC;
+            $params['player_version']    = $params['pc_player_version'];
+        }
+
+        if ( $title = ( @$options['title'] ?: @$video['video_title'] ) ) {
+            $params['title'] = $title;
+        }
+
+        if ( isset( $video['play_position'] ) && $video['play_position'] ) {
+            $params['t'] = $video['play_position'];
+        }
+
+        $this->debug( $params, $options );
+
+        return $this->getVideoGateWay( $mode )
         . '?jwt=' . $this->makeMediaToken( $videos, $userId, $options )
         . '&custom_key=' . $this->getCustomKey()
         . '&' . http_build_query( $params );
@@ -77,7 +93,8 @@ class KollusClient
         $payload         = $this->makePayload( $userId, $options );
         $payload['mc']   = $this->makeMedia( $videos, $options );
         $payload['expt'] = time() + $payload['expt'];
-        $this->debug( [$this->config, $payload, $options] );
+        $this->debug( $payload, $options );
+
         return JWT::encode( $payload, $this->getSecurityKey() );
     }
 
@@ -99,9 +116,9 @@ class KollusClient
         return $mc;
     }
 
-    public function getVideoGateWay()
+    public function getVideoGateWay( $mode )
     {
-        return ( @$_SERVER['REQUEST_SCHEME'] ?: 'http' ) . '://v.' . rtrim( @$this->config['domain'], '/' ) . '/';
+        return ( @$_SERVER['REQUEST_SCHEME'] ?: 'http' ) . '://v.' . rtrim( @$this->config['domain'], '/' ) . "/{$mode}";
     }
 
     private function getAccountKey()
@@ -122,5 +139,10 @@ class KollusClient
     public function getSecurityKey()
     {
         return @$this->config['account']['security_key'];
+    }
+
+    public function debug( ...$params )
+    {
+        $this->logger && $this->logger::debug( static::class . ' ' . print_r( $params, 1 ) );
     }
 }
