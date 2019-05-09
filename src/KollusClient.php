@@ -118,7 +118,7 @@ class KollusClient
 
     public function getVideoGateWay( $mode )
     {
-        return ( @$_SERVER['REQUEST_SCHEME'] ?: 'http' ) . '://v.' . rtrim( @$this->config['domain'], '/' ) . "/{$mode}";
+        return ( @$_SERVER['REQUEST_SCHEME'] ?: 'https' ) . '://v.' . rtrim( @$this->config['domain'], '/' ) . "/{$mode}";
     }
 
     private function getAccountKey()
