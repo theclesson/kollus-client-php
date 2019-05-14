@@ -118,7 +118,8 @@ class KollusClient
 
     public function getVideoGateWay( $mode )
     {
-        return ( @$_SERVER['REQUEST_SCHEME'] ?: 'https' ) . '://v.' . rtrim( @$this->config['domain'], '/' ) . "/{$mode}";
+        //return ( @$_SERVER['REQUEST_SCHEME'] ?: 'https' ) . '://v.' . rtrim( @$this->config['domain'], '/' ) . "/{$mode}";
+        return ( $this->is_secure() ? 'https' : 'http' ) . '://v.' . rtrim( @$this->config['domain'], '/' ) . "/{$mode}";
     }
 
     private function getAccountKey()
@@ -136,9 +137,14 @@ class KollusClient
         return @$this->config['account']['custom_key'];
     }
 
-    public function getSecurityKey()
+    private function getSecurityKey()
     {
         return @$this->config['account']['security_key'];
+    }
+
+    private function is_secure()
+    {
+        return ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' ) || $_SERVER['SERVER_PORT'] == 443;
     }
 
     public function debug( ...$params )
