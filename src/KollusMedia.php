@@ -10,6 +10,7 @@ class KollusMedia
 
     const TYPE_INTRO   = 'INTRO';
     const TYPE_FREE    = 'FREE';
+    const TYPE_PREVIEW = 'PREVIEW';
     const TYPE_REGULAR = 'REGULAR';
 
     protected $attributes;
@@ -29,7 +30,7 @@ class KollusMedia
         $mc['seekable_end']     = @$this->options['seekable_end'] ?: -1;
         $mc['disable_playrate'] = @$this->options['disable_playrate'] ?: true;
 
-        if ( $this->video_type == static::TYPE_REGULAR && $this->video_preview ) {
+        if ( $this->video_type == static::TYPE_PREVIEW && $this->video_preview ) {
             $mc['play_section'] = [
                 'start_time' => 0,
                 'end_time'   => (int) $this->video_preview,
